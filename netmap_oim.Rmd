@@ -1,0 +1,90 @@
+---
+title: "Net-Map Institucional. Trata y tráfico en Bolivia"
+date: "Marzo, 2020"
+author: "Fundación Aru"
+output: rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# (ODS) Objetivo 8: Trabajo decente y crecimiento económico
+
+![Objetivo 8](sdg8.jpg)
+
+Durante los últimos 25 años, la cantidad de trabajadores que viven en condiciones de pobreza extrema ha disminuido drásticamente, pese al impacto de la crisis económica de 2008 y las recesiones globales. En los países en desarrollo, la clase media representa hoy más del 34% del empleo total, una cifra que casi se triplicó entre 1991 y 2015.
+
+Sin embargo, mientras la economía mundial continúa recuperándose presenciamos un crecimiento más lento, un aumento de las desigualdades y un déficit de empleos para absorber la creciente fuerza laboral. Según la Organización Internacional del Trabajo (OIT), en 2015 hay más de 204 millones de personas desempleadas.
+
+Los Objetivos de Desarrollo Sostenible apuntan a estimular el crecimiento económico sostenible mediante el aumento de los niveles de productividad y la innovación tecnológica. Fomentar políticas que estimulen el espíritu empresarial y la creación de empleo es crucial para este fin, así como también las medidas eficaces para erradicar el trabajo forzoso, la esclavitud y el tráfico humano. Con estas metas en consideración, el objetivo es lograr empleo pleno y productivo y un trabajo decente para todos los hombres y mujeres para 2030.
+
+## Meta 7
+
+Adoptar medidas inmediatas y eficaces para erradicar el trabajo forzoso, poner fin a las formas contemporáneas de esclavitud y la trata de personas y asegurar la prohibición y eliminación de las peores formas de trabajo infantil, incluidos el reclutamiento y la utilización de niños soldados, y, de aquí a 2025, poner fin al trabajo infantil en todas sus formas.
+
+# Net-Map Institucional
+
+```{r,echo=F,message=FALSE}
+rm(list=ls())
+###################################################
+library(readxl)
+library(igraph)
+library(sp)
+library(leaflet)
+###################################################
+oim_v<-read_excel("/Users/iMac6/Desktop/_ARU2020/1_OIM_trata/entidades.xlsx",1,skip=1)
+oim_l<-read_excel("/Users/iMac6/Desktop/_ARU2020/1_OIM_trata/entidades.xlsx",2)
+```
+
+## Social Network
+```{r,echo=F}
+netmap <- graph_from_data_frame(d=oim_l, vertices=oim_v, directed=T)
+colrs <- c("gray50", "tomato", "gold","orange")
+ltent=c("Cooperacción","Pública","Sociedad Civil","ONG")
+V(netmap)$color <- colrs[V(netmap)$itent]
+
+#l <- layout_in_circle(netmap)
+
+plot(netmap,vertex.label.color="black",vertex.size=V(netmap)$w*20,
+     vertex.label=V(netmap)$id,vertex.frame.color=T,
+     vertex.color=V(netmap)$color,
+     edge.curved=.1,layout=layout_randomly)
+
+legend("topright", ltent, pch=21,
+       col="#777777", pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
+```
+
+## Dendograma
+
+```{r,echo=F,message=F,warning=F}
+ceb <- cluster_edge_betweenness(netmap) 
+dendPlot(ceb, mode="hclust")
+```
+
+## Asociaciones en la red
+
+```{r,echo=F}
+plot(ceb, netmap,layout=layout_randomly)
+```
+
+# Mapa geográfico de la red
+
+```{r,echo=F}
+gg<-get.data.frame(netmap, "both")
+vert <- gg$vertices
+coordinates(vert) <- ~long+lat
+edges <- gg$edges
+edges <- lapply(1:nrow(edges), function(i) {
+        as(rbind(vert[vert$name == edges[i, "from"], ], 
+                 vert[vert$name == edges[i, "to"], ]), 
+           "SpatialLines")
+})
+for (i in seq_along(edges)) {
+        edges[[i]] <- spChFIDs(edges[[i]], as.character(i))
+}
+edges <- do.call(rbind, edges)
+leaflet(vert) %>% addTiles() %>% addMarkers(data = vert) %>% addPolylines(data = edges)
+```
+
+
