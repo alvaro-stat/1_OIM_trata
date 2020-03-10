@@ -3,12 +3,15 @@ title: "Net-Map Institucional. Trata y tráfico en Bolivia"
 date: "Marzo, 2020"
 author: "Fundación Aru"
 output: rmdformats::readthedown
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
+rm(list=ls())
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+<!--
 # (ODS) Objetivo 8: Trabajo decente y crecimiento económico
 
 ![Objetivo 8](sdg8.jpg)
@@ -22,7 +25,7 @@ Los Objetivos de Desarrollo Sostenible apuntan a estimular el crecimiento econó
 ## Meta 7
 
 Adoptar medidas inmediatas y eficaces para erradicar el trabajo forzoso, poner fin a las formas contemporáneas de esclavitud y la trata de personas y asegurar la prohibición y eliminación de las peores formas de trabajo infantil, incluidos el reclutamiento y la utilización de niños soldados, y, de aquí a 2025, poner fin al trabajo infantil en todas sus formas.
-
+-->
 # Net-Map Institucional
 
 ```{r,echo=F,message=FALSE}
@@ -32,45 +35,92 @@ library(readxl)
 library(igraph)
 library(sp)
 library(leaflet)
+library(visNetwork) 
 ###################################################
-oim_v<-read_excel("/Users/iMac6/Desktop/_ARU2020/1_OIM_trata/entidades.xlsx",1,skip=1)
-oim_l<-read_excel("/Users/iMac6/Desktop/_ARU2020/1_OIM_trata/entidades.xlsx",2)
+oim_v<-read_excel("/Users/iMac6/Desktop/_ARU2020/1_OIM_trata/docs/entidades.xlsx",1,skip=1)
+oim_l<-read_excel("/Users/iMac6/Desktop/_ARU2020/1_OIM_trata/docs/entidades.xlsx",2)
 ```
 
 ## Social Network
-```{r,echo=F}
+```{r,echo=F,include=FALSE}
 netmap <- graph_from_data_frame(d=oim_l, vertices=oim_v, directed=T)
-colrs <- c("gray50", "tomato", "gold","orange")
-ltent=c("Cooperacción","Pública","Sociedad Civil","ONG")
+colrs <- c("pink","green","orange","skyblue")
+ltent=c("Pública","ONG","Cooperacción","Organizaciones Sociales")
 V(netmap)$color <- colrs[V(netmap)$itent]
 
 #l <- layout_in_circle(netmap)
-
-plot(netmap,vertex.label.color="black",vertex.size=V(netmap)$w*20,
+set.seed(888)
+#l <- layout_with_fr(netmap)
+#l <- layout_with_kk(netmap)
+#l <- layout_randomly(netmap)
+#l <- layout_in_circle(netmap)
+l <- layout_nicely(netmap)
+pdf("netmap.pdf",width = 11,height =11)
+plot(netmap,vertex.label.color="black",vertex.label.cex=0.5,vertex.size=V(netmap)$w^2.2+10,
      vertex.label=V(netmap)$id,vertex.frame.color=T,
      vertex.color=V(netmap)$color,
-     edge.curved=.1,layout=layout_randomly)
-
-legend("topright", ltent, pch=21,
+     edge.curved=.1,layout=l*0.45,rescale = F,edge.arrow.size=.6,ylim=c(-2.5,2.5),xlim=c(-0.2,5))
+legend("bottomright", ltent, pch=21,
        col="#777777", pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
+plot(netmap,vertex.label.color="black",vertex.label.cex=0.5,vertex.size=V(netmap)$w^2.2+10,
+     vertex.label=V(netmap)$entidad,vertex.frame.color=T,
+     vertex.color=V(netmap)$color,
+     edge.curved=.1,layout=l*0.45,rescale = F,edge.arrow.size=.6,ylim=c(-2.5,2.5),xlim=c(-0.2,5))
+legend("bottomright", ltent, pch=21,
+       col="#777777", pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
+dev.off()
 ```
 
-## Dendograma
 
 ```{r,echo=F,message=F,warning=F}
-ceb <- cluster_edge_betweenness(netmap) 
-dendPlot(ceb, mode="hclust")
+netmap <- graph_from_data_frame(d=oim_l, vertices=oim_v, directed=T)
+colrs <- c("pink","green","orange","skyblue")
+ltent=c("Pública","ONG","Cooperacción","Organizaciones Sociales")
+V(netmap)$color <- colrs[V(netmap)$itent]
+
+#l <- layout_in_circle(netmap)
+set.seed(888)
+#l <- layout_with_fr(netmap)
+#l <- layout_with_kk(netmap)
+#l <- layout_randomly(netmap)
+#l <- layout_in_circle(netmap)
+l <- layout_nicely(netmap)
+plot(netmap,vertex.label.color="black",vertex.label.cex=0.5,vertex.size=V(netmap)$w^2.2+10,
+     vertex.label=V(netmap)$id,vertex.frame.color=T,
+     vertex.color=V(netmap)$color,
+     edge.curved=.1,layout=l*0.45,rescale = F,edge.arrow.size=.6,ylim=c(-2.5,2.5),xlim=c(-0.2,5))
+legend("bottomright", ltent, pch=21,
+       col="#777777", pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
 ```
 
 ## Asociaciones en la red
 
-```{r,echo=F}
-plot(ceb, netmap,layout=layout_randomly)
+```{r,echo=F,message=F,warning=F}
+netmap2<-as.undirected(netmap)
+clp <- cluster_label_prop(netmap2)
+
+plot(clp,netmap,vertex.label.color="black",vertex.label.cex=0.5,vertex.size=V(netmap)$w^2.2+10,
+     vertex.label=V(netmap)$id,vertex.frame.color=T,
+     vertex.color=V(netmap)$color,
+     edge.curved=.1,layout=l*0.45,rescale = F,edge.arrow.size=.6,ylim=c(-2.5,2.5),xlim=c(-0.2,5))
+#ceb <- cluster_edge_betweenness(netmap2) 
+#dendPlot(ceb,mode="phylo")
+#dendPlot(ceb, mode="hclust")
 ```
 
-# Mapa geográfico de la red
+
+# Red Interactiva
 
 ```{r,echo=F}
+data <- toVisNetworkData(netmap)
+nodes = data$nodes; edges = data$edges
+nodes$size<-nodes$w^2.5+10
+nodes$label<-nodes$entidad
+visNetwork(nodes,edges) %>% visEdges(arrows = "to")
+```
+
+
+```{r,echo=F,eval=FALSE}
 gg<-get.data.frame(netmap, "both")
 vert <- gg$vertices
 coordinates(vert) <- ~long+lat

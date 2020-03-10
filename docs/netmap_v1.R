@@ -58,3 +58,48 @@ net <- simplify(net, remove.multiple = F, remove.loops = T)
 as_edgelist(net, names=T)
 as.network(net)
 
+library(igraph)
+df<-data.frame("from" = c("Lyon", "Toulouse", "Paris", "Marseille"), 
+               "to"= c("Paris", "Paris", "Marseille", "Toulouse"))
+meta <- data.frame("name"=c("Lyon", "Toulouse", "Paris", "Marseille"), 
+                   "lon"=c(-4.850000, 1.444209, 2.352222, 5.36978),  
+                   "lat"=c(45.750000, 43.604652, 48.856614, 43.296482))
+
+g <- graph.data.frame(df, directed=FALSE, vertices=meta)
+lo <- layout.norm(as.matrix(meta[,2:3]))
+plot.igraph(g, layout=lo,vertex.size = 60,
+            vertex.color="red",
+            vertex.frame.color= "white",
+            vertex.label.color = "white",
+            vertex.label.family = "sans",
+            edge.width=2,  
+            edge.color="black")
+
+library(sp)
+gg<-get.data.frame(netmap, "both")
+vert <- gg$vertices
+coordinates(vert) <- ~long+lat
+edges <- gg$edges
+edges <- lapply(1:nrow(edges), function(i) {
+        as(rbind(vert[vert$name == edges[i, "from"], ], 
+                 vert[vert$name == edges[i, "to"], ]), 
+           "SpatialLines")
+})
+for (i in seq_along(edges)) {
+        edges[[i]] <- spChFIDs(edges[[i]], as.character(i))
+}
+edges <- do.call(rbind, edges)
+library(leaflet)
+leaflet(vert) %>% addTiles() %>% addMarkers(data = vert) %>% addPolylines(data = edges)
+
+
+gg <- get.data.frame(g, "both")
+vert <- gg$vertices
+coordinates(vert) <- ~lon+lat
+
+
+
+
+
+
+
