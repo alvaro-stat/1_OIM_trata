@@ -11,6 +11,7 @@ editor_options:
 rm(list=ls())
 knitr::opts_chunk$set(echo = TRUE)
 ```
+OIM 2
 <!--
 # (ODS) Objetivo 8: Trabajo decente y crecimiento económico
 
